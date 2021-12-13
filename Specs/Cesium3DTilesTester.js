@@ -258,12 +258,35 @@ Cesium3DTilesTester.generateInstancedTileBuffer = function (options) {
   var gltfUriByteLength = gltfUri.length;
 
   var featuresLength = defaultValue(options.featuresLength, 1);
-  var featureTableJson = {
-    INSTANCES_LENGTH: featuresLength,
-    POSITION: arrayFill(new Array(featuresLength * 3), 0),
-  };
+  var featureTableJson = options.featureTableJson;
+  if (!defined(featureTableJson)) {
+    featureTableJson = {
+      INSTANCES_LENGTH: featuresLength,
+      POSITION: arrayFill(new Array(featuresLength * 3), 0),
+    };
+  }
   var featureTableJsonString = JSON.stringify(featureTableJson);
   var featureTableJsonByteLength = featureTableJsonString.length;
+
+  var featureTableBinary = options.featureTableBinary;
+  if (!defined(featureTableBinary)) {
+    featureTableBinary = new Uint8Array(0);
+  }
+  var featureTableBinaryByteLength = featureTableBinary.length;
+
+  var batchTableJson = options.batchTableJson;
+  var batchTableJsonString = "";
+  if (defined(batchTableJson)) {
+    batchTableJsonString = JSON.stringify(batchTableJson);
+    batchTableJsonByteLength = batchTableJsonString.length;
+  }
+  var batchTableJsonByteLength = batchTableJsonString.length;
+
+  var batchTableBinary = options.batchTableBinary;
+  if (!defined(batchTableBinary)) {
+    batchTableBinary = new Uint8Array(0);
+  }
+  var batchTableBinaryByteLength = batchTableBinary.length;
 
   var headerByteLength = 32;
   var uriByteLength = gltfUri.length;
@@ -275,18 +298,30 @@ Cesium3DTilesTester.generateInstancedTileBuffer = function (options) {
   view.setUint8(1, magic[1]);
   view.setUint8(2, magic[2]);
   view.setUint8(3, magic[3]);
-  view.setUint32(4, version, true); // version
-  view.setUint32(8, byteLength, true); // byteLength
-  view.setUint32(12, featureTableJsonByteLength, true); // featureTableJsonByteLength
-  view.setUint32(16, 0, true); // featureTableBinaryByteLength
-  view.setUint32(20, 0, true); // batchTableJsonByteLength
-  view.setUint32(24, 0, true); // batchTableBinaryByteLength
-  view.setUint32(28, gltfFormat, true); // gltfFormat
+  view.setUint32(4, version, true);
+  view.setUint32(8, byteLength, true);
+  view.setUint32(12, featureTableJsonByteLength, true);
+  view.setUint32(16, 0, featureTableBinaryByteLength);
+  view.setUint32(20, 0, batchTableJsonByteLength);
+  view.setUint32(24, 0, batchTableBinaryByteLength);
+  view.setUint32(28, gltfFormat, true);
 
   var i;
   var byteOffset = headerByteLength;
   for (i = 0; i < featureTableJsonByteLength; i++) {
     view.setUint8(byteOffset, featureTableJsonString.charCodeAt(i));
+    byteOffset++;
+  }
+  for (i = 0; i < featureTableBinaryByteLength; i++) {
+    view.setUint8(byteOffset, featureTableBinary[i]);
+    byteOffset++;
+  }
+  for (i = 0; i < batchTableJsonByteLength; i++) {
+    view.setUint8(byteOffset, batchTableJsonString.charCodeAt(i));
+    byteOffset++;
+  }
+  for (i = 0; i < batchTableBinaryByteLength; i++) {
+    view.setUint8(byteOffset, batchTableBinary[i]);
     byteOffset++;
   }
   for (i = 0; i < gltfUriByteLength; i++) {
